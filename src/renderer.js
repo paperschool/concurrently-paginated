@@ -144,14 +144,15 @@ class PaginatedRenderer {
   }
 
   processInputKey(key) {
-
     if (this.searchMode) {
       this.handleSearchInput(key);
       return;
     }
 
     if (key === "\u0003" || key.toLowerCase() === "q") {
-      this.onQuit();
+      if (this.onQuit) {
+        this.onQuit();
+      }
     } else if (key === "/") {
       this.beginSearch();
     } else if (key === "n") {
@@ -356,36 +357,66 @@ class PaginatedRenderer {
 
   taskSummary() {
     const available = Math.max(this.width - 1, 10);
-    const selected = this.taskTab(this.selectedIndex, true);
-    const visible = [selected];
-    let used = visibleLength(selected);
-    let left = this.selectedIndex - 1;
-    let right = this.selectedIndex + 1;
+    const tabWidth = (index) => visibleLength(this.taskTab(index, index === this.selectedIndex));
+    const visibleIndexes = [this.selectedIndex];
+    let used = tabWidth(this.selectedIndex);
+    const separatorWidth = 5;
 
-    while (left >= 0 || right < this.tabCount) {
-      const next = right < this.tabCount ? right : left;
-      const tab = this.taskTab(next, false);
-      const overflowWidth = (left > 0 ? 5 : 0) + (right < this.tabCount - 1 ? 5 : 0);
+    const addTab = (index, extraWidth = 0) => {
+      const width = separatorWidth + tabWidth(index) + extraWidth;
 
-      if (used + visibleLength(tab) + 1 + overflowWidth > available) {
-        break;
+      if (used + width > available) {
+        return false;
       }
 
-      if (next < this.selectedIndex) {
-        visible.unshift(tab);
-        left -= 1;
-      } else {
-        visible.push(tab);
-        right += 1;
+      visibleIndexes.push(index);
+      used += width;
+      return true;
+    };
+
+    const immediate = [this.selectedIndex - 1, this.selectedIndex + 1].filter(
+      (index) => index >= 0 && index < this.tabCount,
+    );
+    immediate.forEach((index) => addTab(index));
+
+    const candidates = [];
+    for (let distance = 2; distance < this.tabCount; distance += 1) {
+      const left = this.selectedIndex - distance;
+      const right = this.selectedIndex + distance;
+
+      if (left >= 0) {
+        candidates.push(left);
       }
-      used += visibleLength(tab) + 1;
+      if (right < this.tabCount) {
+        candidates.push(right);
+      }
     }
 
+    const blockedSides = new Set();
+    candidates.forEach((index) => {
+      const side = index < this.selectedIndex ? "left" : "right";
+
+      if (blockedSides.has(side)) {
+        return;
+      }
+
+      const hiddenOnSide = side === "left" ? index > 0 : index < this.tabCount - 1;
+      const markerWidth = hiddenOnSide ? 5 : 0;
+
+      if (!addTab(index, markerWidth)) {
+        blockedSides.add(side);
+      }
+    });
+
+    visibleIndexes.sort((left, right) => left - right);
+    const visible = visibleIndexes.map((index) => this.taskTab(index, index === this.selectedIndex));
+    const leftHidden = visibleIndexes[0] > 0;
+    const rightHidden = visibleIndexes.at(-1) < this.tabCount - 1;
     const muted = (text) => `${DIM}${text}${RESET}${STATUS_BACKGROUND}`;
     const tabs = [
-      ...(left >= 0 ? [muted("...")] : []),
+      ...(leftHidden ? [muted("...")] : []),
       ...visible,
-      ...(right < this.tabCount ? [muted("...")] : []),
+      ...(rightHidden ? [muted("...")] : []),
     ];
 
     return `${tabs.join(`${muted("  ·  ")}`)} `;

@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 No unreleased changes.
 
+## [0.3.0] - 2026-09-14
+
+### Added
+
+- Documented the utility's capabilities and optional jq JSON formatting in the README.
+- Added focused coverage for quit keys and tab overflow behavior.
+
+### Changed
+
+- Keep the selected tab and immediate neighboring tabs visible before distant tabs when the status bar is constrained.
+- Make q and Ctrl+C quit handling resilient across the interactive lifecycle.
+
 ## [0.2.3] - 2026-09-14
 
 ### Fixed

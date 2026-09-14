@@ -9,6 +9,18 @@ A keyboard-navigable terminal UI for [`concurrently`](https://www.npmjs.com/pack
   </tr>
 </table>
 
+## Capabilities
+
+- Run multiple long-lived development commands through `concurrently`.
+- Keep an independent, bounded history for every command.
+- Browse an arrival-ordered `ALL` view across all command output.
+- Search and highlight matches in command histories.
+- Navigate with tabs, arrow keys, paging, numeric shortcuts, and live-follow mode.
+- Preserve child-process ANSI colours and wrap long lines without dropping content.
+- Format complete JSON log lines with optional `jq` colour output.
+- Fall back to prefixed streaming output in CI, redirected, and non-TTY environments.
+- Preserve command-specific lifecycle, restart, environment, and working-directory options.
+
 ## Install
 
 ```sh
@@ -93,7 +105,37 @@ Command objects and `concurrently` options follow the upstream programmatic API.
 | `End`                  | Return to live output                   |
 | `q`, `Ctrl+C`          | Stop all commands                       |
 
-Long lines wrap without losing content. ANSI colours emitted by child commands are preserved. When [`jq`](https://jqlang.github.io/jq/) is installed, complete JSON log lines are pretty-printed and colourised; invalid JSON is passed through unchanged. Use `--no-json` or `formatJsonLogs: false` to disable this.
+Long lines wrap without losing content. ANSI colours emitted by child commands are preserved.
+
+### Optional JSON Formatting With jq
+
+When [`jq`](https://jqlang.github.io/jq/) is installed, each complete JSON log line is validated and formatted with `jq --color-output .`. For example, a line such as:
+
+```json
+{"service":"api","requests":42,"healthy":true}
+```
+
+is rendered as readable, colourised JSON in the selected command history. Ordinary text, invalid JSON, missing `jq`, and formatter failures are passed through unchanged. `jq` is never required to run the utility.
+
+Install `jq` with your package manager if you want this enhancement:
+
+```sh
+# macOS
+brew install jq
+
+# Debian or Ubuntu
+sudo apt-get install jq
+```
+
+Disable formatting from the CLI with `--no-json`, or through the API with `formatJsonLogs: false`:
+
+```js
+runPaginated(commands, {
+  formatJsonLogs: false,
+});
+```
+
+The API also accepts `jqCommand` when `jq` is installed under a custom name or path. Formatting runs once per complete JSON line; non-JSON output does not spawn a formatter process.
 
 The `ALL` tab keeps a bounded, chronological view of output from every command. Each entry is labelled with its source command and retains that command's colour. Search highlights matches in the selected command or in `ALL`, and `n`/`N` cycles through the results while preserving the current history position.
 
@@ -115,4 +157,4 @@ Created and maintained by [Dominic Jomaa](https://www.linkedin.com/in/dominicjom
 
 ## Funding
 
-If `concurrently-paginated` is useful to you, you can support its development through the options in [FUNDING.md](FUNDING.md).
+If `concurrently-paginated` is useful to you, you can support its development through the options in [FUNDING.md](.github/FUNDING.yml).

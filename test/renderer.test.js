@@ -4,13 +4,13 @@ const { PassThrough } = require("node:stream");
 const { stripAnsi } = require("../src/ansi");
 const { PaginatedRenderer } = require("../src/renderer");
 
-function createRenderer() {
+function createRenderer(commands, columns = 80) {
     const output = new PassThrough();
-    output.columns = 80;
+    output.columns = columns;
     output.rows = 10;
 
     return new PaginatedRenderer(
-        [{ name: "ONE" }, { name: "TWO" }],
+        commands || [{ name: "ONE" }, { name: "TWO" }],
         { maxBufferLines: 10, output },
     );
 }
@@ -86,3 +86,31 @@ test("does not retain terminal input sequences in exited command history", () =>
 
     assert.equal(renderer.states[0].buffer[0], "ready");
 });
+
+    test("keeps immediate neighboring tabs visible before distant tabs", () => {
+        const commands = Array.from({ length: 7 }, (_, index) => ({
+            name: `TAB-${index + 1}`,
+        }));
+        const renderer = createRenderer(commands, 45);
+        renderer.select(3);
+
+        const summary = renderer.taskSummary();
+
+        assert.match(summary, /TAB-3/);
+        assert.match(summary, /TAB-4/);
+        assert.match(summary, /TAB-5/);
+        assert.doesNotMatch(summary, /TAB-1|TAB-2|TAB-6|TAB-7/);
+    });
+
+    test("handles q and Ctrl+C as quit requests", () => {
+        const renderer = createRenderer();
+        let quitRequests = 0;
+        renderer.onQuit = () => {
+            quitRequests += 1;
+        };
+
+        renderer.processInputKey("q");
+        renderer.processInputKey("\u0003");
+
+        assert.equal(quitRequests, 2);
+    });

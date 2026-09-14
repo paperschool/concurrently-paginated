@@ -70,19 +70,22 @@ function runPaginated(commands, options = {}) {
   let runnerError;
   let runnerFinished = false;
   let cleanup;
+  let cleanupRequested = false;
+  let cleanedUp = false;
 
   const stop = () => {
     if (stopped) {
       return;
     }
     stopped = true;
+    cleanupRequested = true;
     runner.commands.forEach((command) => {
       if (command.stdin) {
         command.stdin.end();
       }
       command.kill("SIGTERM");
     });
-    if (runnerFinished) {
+    if (runnerFinished && cleanup) {
       cleanup();
     }
   };
@@ -92,6 +95,10 @@ function runPaginated(commands, options = {}) {
 
   return new Promise((resolve, reject) => {
     cleanup = () => {
+      if (cleanedUp) {
+        return;
+      }
+      cleanedUp = true;
       outputRouter.flush();
       loggerSubscription.unsubscribe();
       renderer.stop();
@@ -106,14 +113,14 @@ function runPaginated(commands, options = {}) {
       (result) => {
         runnerFinished = true;
         runnerResult = result;
-        if (stopped) {
+        if (cleanupRequested) {
           cleanup();
         }
       },
       (error) => {
         runnerFinished = true;
         runnerError = error;
-        if (stopped) {
+        if (cleanupRequested) {
           cleanup();
         }
       },
