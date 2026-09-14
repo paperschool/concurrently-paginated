@@ -3,7 +3,10 @@ const BOLD = "\u001b[1m";
 const DIM = "\u001b[2m";
 const REVERSE = "\u001b[7m";
 const TITLE_BACKGROUND = "\u001b[48;5;236m";
-const STATUS_BACKGROUND = "\u001b[48;5;238m";
+const STATUS_BACKGROUND = "\u001b[48;5;240m";
+const SELECTED_TAB_BACKGROUND = "\u001b[48;5;153m";
+const SELECTED_TAB_FOREGROUND = "\u001b[38;5;23m";
+const TAB_FOREGROUND = "\u001b[38;5;250m";
 const ENTER_ALTERNATE_SCREEN = "\u001b[?1049h\u001b[?25l";
 const LEAVE_ALTERNATE_SCREEN = "\u001b[?25h\u001b[?1049l";
 const SGR_PATTERN = "\\u001b\\[[\\d;]+m";
@@ -21,6 +24,16 @@ const TASK_COLOURS = [
 
 function stripAnsi(text) {
   return text.replace(new RegExp(SGR_PATTERN, "g"), "");
+}
+
+function stripTerminalControls(text) {
+  return text
+    .replace(
+      /\u001b\[([0-?]*)([ -/]*)([@-~])/g,
+      (sequence, params, intermediates, final) =>
+        final === "m" ? sequence : "",
+    )
+    .replace(/\^\[\[([0-?]*)([ -/]*)([@-~])/g, "");
 }
 
 function visibleLength(text) {
@@ -83,9 +96,13 @@ module.exports = {
   LEAVE_ALTERNATE_SCREEN,
   RESET,
   REVERSE,
+  SELECTED_TAB_BACKGROUND,
+  SELECTED_TAB_FOREGROUND,
+  TAB_FOREGROUND,
   STATUS_BACKGROUND,
   TITLE_BACKGROUND,
   stripAnsi,
+  stripTerminalControls,
   taskColour,
   visibleLength,
   wrapAnsi,

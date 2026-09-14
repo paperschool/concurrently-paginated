@@ -1,13 +1,15 @@
 const readline = require("node:readline");
 const {
-  BOLD,
   DIM,
   ENTER_ALTERNATE_SCREEN,
   LEAVE_ALTERNATE_SCREEN,
   REVERSE,
   RESET,
+  SELECTED_TAB_BACKGROUND,
+  SELECTED_TAB_FOREGROUND,
+  TAB_FOREGROUND,
   STATUS_BACKGROUND,
-  TITLE_BACKGROUND,
+  stripTerminalControls,
   taskColour,
   visibleLength,
   wrapAnsi,
@@ -40,6 +42,8 @@ class PaginatedRenderer {
     this.searchQuery = "";
     this.searchMatches = [];
     this.searchMatchIndex = -1;
+    this.pendingInput = "";
+    this.inputSequenceTimer = null;
     this.renderQueued = false;
     this.started = false;
   }
@@ -57,6 +61,8 @@ class PaginatedRenderer {
 
   stop() {
     this.started = false;
+    clearTimeout(this.inputSequenceTimer);
+    this.inputSequenceTimer = null;
     this.input.off("data", this.handleInput);
     this.output.off("resize", this.handleResize);
     this.input.setRawMode(false);
@@ -65,6 +71,7 @@ class PaginatedRenderer {
 
   append(index, line) {
     const state = this.states[index];
+    line = stripTerminalControls(line);
     state.buffer.push(line);
     this.allState.buffer.push({ index, line });
 
@@ -96,7 +103,47 @@ class PaginatedRenderer {
   }
 
   handleInput = (data) => {
-    const key = data.toString("utf8");
+    this.pendingInput += data.toString("utf8");
+    this.consumeInput();
+  };
+
+  consumeInput() {
+    while (this.pendingInput) {
+      if (this.pendingInput.startsWith("\u001b")) {
+        const sequence = this.pendingInput.match(/^\u001b\[[0-9;?]*[ -\/]*[@-~]/);
+
+        if (sequence) {
+          this.pendingInput = this.pendingInput.slice(sequence[0].length);
+          this.processInputKey(sequence[0]);
+          continue;
+        }
+
+        if (
+          this.pendingInput === "\u001b" ||
+          /^\u001b\[[0-9;?]*[ -\/]*$/.test(this.pendingInput)
+        ) {
+          this.deferEscapeInput();
+          return;
+        }
+      }
+
+      const [key] = Array.from(this.pendingInput);
+      this.pendingInput = this.pendingInput.slice(key.length);
+      this.processInputKey(key);
+    }
+  }
+
+  deferEscapeInput() {
+    clearTimeout(this.inputSequenceTimer);
+    this.inputSequenceTimer = setTimeout(() => {
+      if (this.pendingInput === "\u001b") {
+        this.pendingInput = "";
+        this.processInputKey("\u001b");
+      }
+    }, 25);
+  }
+
+  processInputKey(key) {
 
     if (this.searchMode) {
       this.handleSearchInput(key);
@@ -133,7 +180,7 @@ class PaginatedRenderer {
         this.render();
       }
     }
-  };
+  }
 
   handleResize = () => this.render();
 
@@ -278,16 +325,14 @@ class PaginatedRenderer {
   }
 
   renderTitleBar() {
-    const state = this.selectedState;
-    const mode = state.scrollOffset > 0 ? `history -${state.scrollOffset}` : "live";
-    const search = this.searchQuery
-      ? ` - match ${this.searchMatchIndex + 1}/${this.searchMatches.length}`
-      : "";
-    const title = this.allState === state
-      ? ` Viewing ALL - ${mode}${search} `
-      : ` Viewing ${state.index + 1}/${this.states.length}: ${state.name} - ${state.status} - ${mode}${search} `;
+    const title = this.titleText();
 
-    this.renderBar(0, taskColour(state.index, title, TITLE_BACKGROUND), TITLE_BACKGROUND);
+    this.renderBar(0, `${TAB_FOREGROUND}${title}${RESET}`, STATUS_BACKGROUND);
+  }
+
+  titleText() {
+    const state = this.selectedState;
+    return ` ${state.name} - ${state.status} `;
   }
 
   renderStatusBar() {
@@ -310,8 +355,7 @@ class PaginatedRenderer {
   }
 
   taskSummary() {
-    const prefix = " Tabs: ";
-    const available = Math.max(this.width - prefix.length - 1, 10);
+    const available = Math.max(this.width - 1, 10);
     const selected = this.taskTab(this.selectedIndex, true);
     const visible = [selected];
     let used = visibleLength(selected);
@@ -323,7 +367,7 @@ class PaginatedRenderer {
       const tab = this.taskTab(next, false);
       const overflowWidth = (left > 0 ? 5 : 0) + (right < this.tabCount - 1 ? 5 : 0);
 
-      if (used + visibleLength(tab) + 3 + overflowWidth > available) {
+      if (used + visibleLength(tab) + 1 + overflowWidth > available) {
         break;
       }
 
@@ -334,7 +378,7 @@ class PaginatedRenderer {
         visible.push(tab);
         right += 1;
       }
-      used += visibleLength(tab) + 3;
+      used += visibleLength(tab) + 1;
     }
 
     const muted = (text) => `${DIM}${text}${RESET}${STATUS_BACKGROUND}`;
@@ -344,22 +388,17 @@ class PaginatedRenderer {
       ...(right < this.tabCount ? [muted("...")] : []),
     ];
 
-    return `${prefix}${tabs.join(muted(" | "))} `;
+    return `${tabs.join(`${muted("  ·  ")}`)} `;
   }
 
   taskTab(index, selected) {
-    if (index === this.states.length) {
-      const text = selected ? "[ALL]" : "ALL";
-      return `${selected ? BOLD : ""}${taskColour(0, text, STATUS_BACKGROUND)}`;
+    const title = index === this.states.length ? "ALL" : this.states[index].name;
+
+    if (selected) {
+      return `${SELECTED_TAB_BACKGROUND}${SELECTED_TAB_FOREGROUND} ${title} ${RESET}${STATUS_BACKGROUND}`;
     }
 
-    const state = this.states[index];
-    const status = state.running ? " +" : state.status.startsWith("exit 0") ? " ok" : " !";
-    const label = `${index + 1}:${state.name}${status}`;
-    const text = selected ? `[${label}]` : label;
-    const emphasis = selected ? BOLD : "";
-
-    return `${emphasis}${taskColour(index, text, STATUS_BACKGROUND)}`;
+    return `${TAB_FOREGROUND} ${title} ${RESET}${STATUS_BACKGROUND}`;
   }
 
   visualLines() {

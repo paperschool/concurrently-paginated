@@ -21,3 +21,16 @@ test("streams prefixed output when no TTY is available", async () => {
 test("rejects an empty command list", () => {
   assert.throws(() => runPaginated([]), /at least one command/);
 });
+
+test("keeps terminal input out of child process input forwarding", async () => {
+  const output = new PassThrough();
+  const input = new PassThrough();
+  input.isTTY = false;
+
+  await runPaginated(
+    [{ name: "ONE", command: `${process.execPath} -e "console.log('ready')"` }],
+    { formatJsonLogs: false, input, output, concurrently: { handleInput: true } },
+  );
+
+  assert.match(output.read()?.toString("utf8") || "", /ONE ready/);
+});

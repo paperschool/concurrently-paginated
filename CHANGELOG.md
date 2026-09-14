@@ -8,8 +8,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
-- Reserved space for unreleased changes.
 - Added `npm run example` and a checked-in multi-command demo.
+
+### Changed
+
+- Applied a monochrome graphite treatment to the title and tab bars.
+- Added a soft light-blue selected-tab highlight with grey tab labels.
+- Simplified the title bar to show only the selected command and lifecycle status.
+- Keep the interactive view open after all commands exit so their histories remain browsable.
+
+### Fixed
+
+- Decode multiple terminal escape sequences received in one input chunk so navigation keys are not printed as raw `^[[` text after terminal focus changes.
+- Prevent terminal input from being forwarded to child processes and remove leaked cursor sequences from buffered history.
 
 ## [0.2.0] - 2026-09-14
 

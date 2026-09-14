@@ -1,5 +1,5 @@
 const concurrently = require("concurrently");
-const { Writable } = require("node:stream");
+const { Readable, Writable } = require("node:stream");
 const { createJsonFormatter } = require("./json-formatter");
 const { OutputRouter } = require("./output-router");
 const { PaginatedRenderer } = require("./renderer");
@@ -53,6 +53,8 @@ function runPaginated(commands, options = {}) {
     ...options.concurrently,
     logger,
     outputStream: discardOutput,
+    inputStream: Readable.from([]),
+    handleInput: false,
     raw: false,
   });
 
@@ -64,22 +66,58 @@ function runPaginated(commands, options = {}) {
   }
 
   let stopped = false;
+  let runnerResult;
+  let runnerError;
+  let runnerFinished = false;
+  let cleanup;
 
   const stop = () => {
     if (stopped) {
       return;
     }
     stopped = true;
-    runner.commands.forEach((command) => command.kill("SIGTERM"));
+    runner.commands.forEach((command) => {
+      if (command.stdin) {
+        command.stdin.end();
+      }
+      command.kill("SIGTERM");
+    });
+    if (runnerFinished) {
+      cleanup();
+    }
   };
 
   attachStatuses(runner.commands, renderer);
   renderer.start(stop);
 
-  return runner.result.finally(() => {
-    outputRouter.flush();
-    loggerSubscription.unsubscribe();
-    renderer.stop();
+  return new Promise((resolve, reject) => {
+    cleanup = () => {
+      outputRouter.flush();
+      loggerSubscription.unsubscribe();
+      renderer.stop();
+      if (runnerError) {
+        reject(runnerError);
+      } else {
+        resolve(runnerResult);
+      }
+    };
+
+    runner.result.then(
+      (result) => {
+        runnerFinished = true;
+        runnerResult = result;
+        if (stopped) {
+          cleanup();
+        }
+      },
+      (error) => {
+        runnerFinished = true;
+        runnerError = error;
+        if (stopped) {
+          cleanup();
+        }
+      },
+    );
   });
 }
 
