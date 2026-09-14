@@ -1,5 +1,10 @@
 # concurrently-paginated
 
+[![npm version](https://img.shields.io/npm/v/concurrently-paginated?logo=npm)](https://www.npmjs.com/package/concurrently-paginated)
+[![npm downloads](https://img.shields.io/npm/dm/concurrently-paginated?logo=npm)](https://www.npmjs.com/package/concurrently-paginated)
+[![Node.js](https://img.shields.io/node/v/concurrently-paginated?logo=node.js)](https://www.npmjs.com/package/concurrently-paginated)
+[![License](https://img.shields.io/npm/l/concurrently-paginated)](https://www.npmjs.com/package/concurrently-paginated)
+
 A keyboard-navigable terminal UI for [`concurrently`](https://www.npmjs.com/package/concurrently). Each command gets its own buffered log history, while the active command title and compact tab bar remain fixed on screen.
 
 <table>
