@@ -1,7 +1,12 @@
 {
   "name": "concurrently-paginated",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "A paginated terminal UI for concurrently with per-command log history.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paperschool/concurrently-paginated.git"
+  },
+  "homepage": "https://github.com/paperschool/concurrently-paginated#readme",
   "keywords": [
     "concurrently",
     "cli",
@@ -22,8 +27,7 @@
     "examples",
     "src",
     "README.md",
-    "CHANGELOG.md",
-    "FUNDING.md"
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=18"

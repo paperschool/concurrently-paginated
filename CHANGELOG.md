@@ -8,6 +8,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 No unreleased changes.
 
+## [0.2.3] - 2026-09-14
+
+### Fixed
+
+- Use stable GitHub-hosted screenshot URLs so README images render on npm.
+- Add repository and homepage metadata to the published package.
+
 ## [0.2.2] - 2026-09-14
 
 ### Changed

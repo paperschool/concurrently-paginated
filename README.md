@@ -4,8 +4,8 @@ A keyboard-navigable terminal UI for [`concurrently`](https://www.npmjs.com/pack
 
 <table>
   <tr>
-    <td><img src="docs/all.png" alt="All commands live output view" width="100%"></td>
-    <td><img src="docs/search.png" alt="Command history search view" width="100%"></td>
+    <td><img src="https://raw.githubusercontent.com/paperschool/concurrently-paginated/main/docs/all.png" alt="All commands live output view" width="100%"></td>
+    <td><img src="https://raw.githubusercontent.com/paperschool/concurrently-paginated/main/docs/search.png" alt="Command history search view" width="100%"></td>
   </tr>
 </table>
 
