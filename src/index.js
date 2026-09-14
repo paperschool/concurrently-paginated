@@ -27,10 +27,10 @@ function runPaginated(commands, options = {}) {
   );
   const renderer = interactive
     ? new PaginatedRenderer(normalizedCommands, {
-        input,
-        maxBufferLines: options.maxBufferLines,
-        output,
-      })
+      input,
+      maxBufferLines: options.maxBufferLines,
+      output,
+    })
     : null;
   const outputRouter = new OutputRouter((index, line) => {
     formatJson(line).forEach((formatted) => {

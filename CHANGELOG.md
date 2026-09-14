@@ -8,6 +8,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 No unreleased changes.
 
+## [0.2.2] - 2026-09-14
+
+### Changed
+
+- Moved the funding documentation into `.github/FUNDING.md`.
+- Refined the README, product documentation, and screenshot example formatting.
+
+### Removed
+
+- Removed the temporary status-bar palette preview script.
+
 ## [0.2.1] - 2026-09-14
 
 ### Added

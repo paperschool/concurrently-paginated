@@ -1,6 +1,6 @@
 {
   "name": "concurrently-paginated",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A paginated terminal UI for concurrently with per-command log history.",
   "keywords": [
     "concurrently",

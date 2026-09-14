@@ -81,17 +81,17 @@ Command objects and `concurrently` options follow the upstream programmatic API.
 
 ## Controls
 
-| Key | Action |
-| --- | --- |
-| `/` | Start a search in the selected history |
-| `Enter`, `Esc` | Apply or cancel a search |
-| `n`, `N` | Go to the next or previous search match |
-| `Tab`, `Left`, `Right` | Switch command or the `ALL` view |
-| `1`-`9` | Jump to a command |
-| `Up`, `Down` | Scroll log history |
-| `Page Up`, `Page Down` | Scroll one page |
-| `End` | Return to live output |
-| `q`, `Ctrl+C` | Stop all commands |
+| Key                    | Action                                  |
+| ---------------------- | --------------------------------------- |
+| `/`                    | Start a search in the selected history  |
+| `Enter`, `Esc`         | Apply or cancel a search                |
+| `n`, `N`               | Go to the next or previous search match |
+| `Tab`, `Left`, `Right` | Switch command or the `ALL` view        |
+| `1`-`9`                | Jump to a command                       |
+| `Up`, `Down`           | Scroll log history                      |
+| `Page Up`, `Page Down` | Scroll one page                         |
+| `End`                  | Return to live output                   |
+| `q`, `Ctrl+C`          | Stop all commands                       |
 
 Long lines wrap without losing content. ANSI colours emitted by child commands are preserved. When [`jq`](https://jqlang.github.io/jq/) is installed, complete JSON log lines are pretty-printed and colourised; invalid JSON is passed through unchanged. Use `--no-json` or `formatJsonLogs: false` to disable this.
 
