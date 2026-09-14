@@ -1,0 +1,97 @@
+# concurrently-paginated
+
+A keyboard-navigable terminal UI for [`concurrently`](https://www.npmjs.com/package/concurrently). Each command gets its own buffered log history, while the active command title and compact tab bar remain fixed on screen.
+
+## Install
+
+```sh
+npm install --save-dev concurrently-paginated
+```
+
+## Inline CLI
+
+```json
+{
+  "scripts": {
+    "dev": "concurrently-paginated --names PROXY,SERVER,CLIENT \"npm run proxy\" \"npm run server\" \"npm run client\""
+  }
+}
+```
+
+The shorter `concp` binary is also available.
+
+```sh
+concp -n PROXY,SERVER "npm run proxy" "npm run server"
+```
+
+## Bootstrap File
+
+Create a regular JavaScript file when command-specific options are easier to maintain outside `package.json`:
+
+```js
+const { runPaginated } = require("concurrently-paginated");
+
+runPaginated(
+  [
+    { name: "PROXY", command: "npm run proxy" },
+    { name: "SERVER", command: "npm run server", env: { PORT: "4000" } },
+    { name: "CLIENT", command: "npm run client" },
+  ],
+  {
+    concurrently: {
+      killOthersOn: ["failure", "success"],
+      restartTries: 3,
+    },
+    formatJsonLogs: true,
+    maxBufferLines: 2000,
+  },
+).catch(() => {
+  process.exitCode = 1;
+});
+```
+
+Then call it from `package.json`:
+
+```json
+{
+  "scripts": {
+    "dev": "node scripts/dev.js"
+  }
+}
+```
+
+## Run The Example
+
+To try the interactive UI from a checkout, run:
+
+```sh
+npm run example
+```
+
+The demo starts three short-lived commands named `API`, `WORKER`, and `WEB`. Use `/` to search, `n`/`N` to move between matches, and `Tab` or the arrow keys to visit the `ALL` tab.
+
+Command objects and `concurrently` options follow the upstream programmatic API.
+
+## Controls
+
+| Key | Action |
+| --- | --- |
+| `/` | Start a search in the selected history |
+| `Enter`, `Esc` | Apply or cancel a search |
+| `n`, `N` | Go to the next or previous search match |
+| `Tab`, `Left`, `Right` | Switch command or the `ALL` view |
+| `1`-`9` | Jump to a command |
+| `Up`, `Down` | Scroll log history |
+| `Page Up`, `Page Down` | Scroll one page |
+| `End` | Return to live output |
+| `q`, `Ctrl+C` | Stop all commands |
+
+Long lines wrap without losing content. ANSI colours emitted by child commands are preserved. When [`jq`](https://jqlang.github.io/jq/) is installed, complete JSON log lines are pretty-printed and colourised; invalid JSON is passed through unchanged. Use `--no-json` or `formatJsonLogs: false` to disable this.
+
+The `ALL` tab keeps a bounded, chronological view of output from every command. Each entry is labelled with its source command and retains that command's colour. Search highlights matches in the selected command or in `ALL`, and `n`/`N` cycles through the results while preserving the current history position.
+
+When stdout is redirected or no interactive TTY is available, output falls back to conventional prefixed streaming logs.
+
+## Versioning
+
+Releases follow [Semantic Versioning](https://semver.org/). Release notes are maintained in [CHANGELOG.md](CHANGELOG.md). To prepare a release, update the changelog, run `npm test`, `npm run lint`, and `npm pack --dry-run`, then use `npm version <major|minor|patch>` to create the package version commit and tag.
