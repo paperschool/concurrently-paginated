@@ -67,62 +67,46 @@ function runPaginated(commands, options = {}) {
 
   let stopped = false;
   let runnerResult;
-  let runnerError;
-  let runnerFinished = false;
   let cleanup;
-  let cleanupRequested = false;
-  let cleanedUp = false;
+  let rendererStopped = false;
 
   const stop = () => {
     if (stopped) {
       return;
     }
     stopped = true;
-    cleanupRequested = true;
     runner.commands.forEach((command) => {
       if (command.stdin) {
         command.stdin.end();
       }
       command.kill("SIGTERM");
     });
-    if (runnerFinished && cleanup) {
+    if (cleanup) {
       cleanup();
     }
   };
 
-  attachStatuses(runner.commands, renderer);
-  renderer.start(stop);
-
   return new Promise((resolve, reject) => {
     cleanup = () => {
-      if (cleanedUp) {
+      if (rendererStopped) {
         return;
       }
-      cleanedUp = true;
+      rendererStopped = true;
       outputRouter.flush();
       loggerSubscription.unsubscribe();
       renderer.stop();
-      if (runnerError) {
-        reject(runnerError);
-      } else {
-        resolve(runnerResult);
-      }
     };
+
+    attachStatuses(runner.commands, renderer);
+    renderer.start(stop);
 
     runner.result.then(
       (result) => {
-        runnerFinished = true;
         runnerResult = result;
-        if (cleanupRequested) {
-          cleanup();
-        }
+        resolve(runnerResult);
       },
       (error) => {
-        runnerFinished = true;
-        runnerError = error;
-        if (cleanupRequested) {
-          cleanup();
-        }
+        reject(error);
       },
     );
   });

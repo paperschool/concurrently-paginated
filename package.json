@@ -1,49 +1,49 @@
 {
-  "name": "concurrently-paginated",
-  "version": "0.3.0",
-  "description": "A paginated terminal UI for concurrently with per-command log history.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/paperschool/concurrently-paginated.git"
-  },
-  "homepage": "https://github.com/paperschool/concurrently-paginated#readme",
-  "keywords": [
-    "concurrently",
-    "cli",
-    "terminal",
-    "logs",
-    "development"
-  ],
-  "license": "MIT",
-  "main": "src/index.js",
-  "types": "src/index.d.ts",
-  "bin": {
-    "concurrently-paginated": "bin/concurrently-paginated.js",
-    "concp": "bin/concurrently-paginated.js"
-  },
-  "files": [
-    "bin",
-    "docs",
-    "examples",
-    "src",
-    "README.md",
-    "CHANGELOG.md"
-  ],
-  "engines": {
-    "node": ">=18"
-  },
-  "scripts": {
-    "example": "node examples/basic.js",
-    "lint": "eslint .",
-    "test": "node --test",
-    "test:coverage": "node --test --experimental-test-coverage",
-    "prepack": "npm test && npm run lint"
-  },
-  "dependencies": {
-    "concurrently": "^9.2.1"
-  },
-  "devDependencies": {
-    "eslint": "^9.35.0",
-    "globals": "^16.3.0"
-  }
+    "name": "concurrently-paginated",
+    "version": "0.3.1",
+    "description": "A paginated terminal UI for concurrently with per-command log history.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/paperschool/concurrently-paginated.git"
+    },
+    "homepage": "https://github.com/paperschool/concurrently-paginated#readme",
+    "keywords": [
+        "concurrently",
+        "cli",
+        "terminal",
+        "logs",
+        "development"
+    ],
+    "license": "MIT",
+    "main": "src/index.js",
+    "types": "src/index.d.ts",
+    "bin": {
+        "concurrently-paginated": "bin/concurrently-paginated.js",
+        "concp": "bin/concurrently-paginated.js"
+    },
+    "files": [
+        "bin",
+        "docs",
+        "examples",
+        "src",
+        "README.md",
+        "CHANGELOG.md"
+    ],
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "example": "node examples/basic.js",
+        "lint": "eslint .",
+        "test": "node --test",
+        "test:coverage": "node --test --experimental-test-coverage",
+        "prepack": "npm test && npm run lint"
+    },
+    "dependencies": {
+        "concurrently": "^9.2.1"
+    },
+    "devDependencies": {
+        "eslint": "^9.35.0",
+        "globals": "^16.3.0"
+    }
 }

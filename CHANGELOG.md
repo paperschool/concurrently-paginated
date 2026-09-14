@@ -8,6 +8,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 No unreleased changes.
 
+## [0.3.1] - 2026-09-14
+
+### Fixed
+
+- Restore the terminal immediately when q or Ctrl+C is pressed, without waiting for runner promise settlement.
+
 ## [0.3.0] - 2026-09-14
 
 ### Added
