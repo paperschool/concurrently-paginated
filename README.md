@@ -2,6 +2,13 @@
 
 A keyboard-navigable terminal UI for [`concurrently`](https://www.npmjs.com/package/concurrently). Each command gets its own buffered log history, while the active command title and compact tab bar remain fixed on screen.
 
+<table>
+  <tr>
+    <td><img src="docs/all.png" alt="All commands live output view" width="100%"></td>
+    <td><img src="docs/search.png" alt="Command history search view" width="100%"></td>
+  </tr>
+</table>
+
 ## Install
 
 ```sh
@@ -68,7 +75,7 @@ To try the interactive UI from a checkout, run:
 npm run example
 ```
 
-The demo starts three short-lived commands named `API`, `WORKER`, and `WEB`. Use `/` to search, `n`/`N` to move between matches, and `Tab` or the arrow keys to visit the `ALL` tab.
+The demo simulates a small workspace with API traffic, worker queue batches, and frontend rebuilds. It includes coloured lifecycle messages, structured JSON lines, warnings, and completion states across `API`, `WORKER`, and `WEB`. Use `/` to search, `n`/`N` to move between matches, and `Tab` or the arrow keys to visit the `ALL` tab.
 
 Command objects and `concurrently` options follow the upstream programmatic API.
 
@@ -95,3 +102,17 @@ When stdout is redirected or no interactive TTY is available, output falls back 
 ## Versioning
 
 Releases follow [Semantic Versioning](https://semver.org/). Release notes are maintained in [CHANGELOG.md](CHANGELOG.md). To prepare a release, update the changelog, run `npm test`, `npm run lint`, and `npm pack --dry-run`, then use `npm version <major|minor|patch>` to create the package version commit and tag.
+
+## Disclaimer
+
+This project is currently developed and tested primarily on macOS. Other platforms are not officially supported yet and may have terminal, ANSI, shell, or process-lifecycle compatibility issues.
+
+## Authors
+
+Created and maintained by [Dominic Jomaa](https://www.linkedin.com/in/dominicjomaa/).
+
+[LinkedIn](https://www.linkedin.com/in/dominicjomaa/) • [Instagram](https://www.instagram.com/ono.sendai.runner/)
+
+## Funding
+
+If `concurrently-paginated` is useful to you, you can support its development through the options in [FUNDING.md](FUNDING.md).

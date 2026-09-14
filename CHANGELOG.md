@@ -6,9 +6,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.2.1] - 2026-09-14
+
 ### Added
 
-- Added `npm run example` and a checked-in multi-command demo.
+- Added `npm run example` and a checked-in multi-command workspace simulation for screenshots and manual UI testing.
+- Added a workspace `version-and-commit` prompt for consistent release preparation.
+- Added README screenshots, funding information, and a macOS support disclaimer.
 
 ### Changed
 

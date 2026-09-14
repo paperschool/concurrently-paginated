@@ -1,6 +1,6 @@
 {
   "name": "concurrently-paginated",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A paginated terminal UI for concurrently with per-command log history.",
   "keywords": [
     "concurrently",
@@ -22,7 +22,8 @@
     "examples",
     "src",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "FUNDING.md"
   ],
   "engines": {
     "node": ">=18"
