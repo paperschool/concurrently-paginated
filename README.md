@@ -11,6 +11,7 @@ A keyboard-navigable terminal UI for [`concurrently`](https://www.npmjs.com/pack
   <tr>
     <td><img src="https://raw.githubusercontent.com/paperschool/concurrently-paginated/main/docs/all.png" alt="All commands live output view" width="100%"></td>
     <td><img src="https://raw.githubusercontent.com/paperschool/concurrently-paginated/main/docs/search.png" alt="Command history search view" width="100%"></td>
+    <td><img src="https://raw.githubusercontent.com/paperschool/concurrently-paginated/main/docs/help.png" alt="Keyboard shortcuts view" width="100%"></td>
   </tr>
 </table>
 
@@ -100,18 +101,18 @@ Command objects and `concurrently` options follow the upstream programmatic API.
 
 ## Controls
 
-| Key                    | Action                                  |
-| ---------------------- | --------------------------------------- |
+| Key                    | Action                                    |
+| ---------------------- | ----------------------------------------- |
 | `/`                    | Start live search in the selected history |
 | `Enter`, `Esc`         | Exit search entry mode                    |
-| `n`, `N`               | Go to the next or previous search match |
-| `?`                    | Show keyboard shortcuts                 |
-| `Tab`, `Left`, `Right` | Switch command or the `ALL` view        |
-| `1`-`9`                | Jump to a command                       |
-| `Up`, `Down`           | Scroll log history                      |
-| `Page Up`, `Page Down` | Scroll one page                         |
-| `End`                  | Return to live output                   |
-| `q`, `Ctrl+C`          | Stop all commands                       |
+| `n`, `N`               | Go to the next or previous search match   |
+| `?`                    | Show keyboard shortcuts                   |
+| `Tab`, `Left`, `Right` | Switch command or the `ALL` view          |
+| `1`-`9`                | Jump to a command                         |
+| `Up`, `Down`           | Scroll log history                        |
+| `Page Up`, `Page Down` | Scroll one page                           |
+| `End`                  | Return to live output                     |
+| `q`, `Ctrl+C`          | Stop all commands                         |
 
 Long lines wrap without losing content. ANSI colours emitted by child commands are preserved.
 
