@@ -20,7 +20,9 @@ A keyboard-navigable terminal UI for [`concurrently`](https://www.npmjs.com/pack
 - Keep an independent, bounded history for every command.
 - Browse an arrival-ordered `ALL` view across all command output.
 - Search and highlight matches in command histories.
+- Highlight search matches live as you type.
 - Navigate with tabs, arrow keys, paging, numeric shortcuts, and live-follow mode.
+- Open a formatted keyboard-shortcuts view with `?`.
 - Preserve child-process ANSI colours and wrap long lines without dropping content.
 - Format complete JSON log lines with optional `jq` colour output.
 - Fall back to prefixed streaming output in CI, redirected, and non-TTY environments.
@@ -100,9 +102,10 @@ Command objects and `concurrently` options follow the upstream programmatic API.
 
 | Key                    | Action                                  |
 | ---------------------- | --------------------------------------- |
-| `/`                    | Start a search in the selected history  |
-| `Enter`, `Esc`         | Apply or cancel a search                |
+| `/`                    | Start live search in the selected history |
+| `Enter`, `Esc`         | Exit search entry mode                    |
 | `n`, `N`               | Go to the next or previous search match |
+| `?`                    | Show keyboard shortcuts                 |
 | `Tab`, `Left`, `Right` | Switch command or the `ALL` view        |
 | `1`-`9`                | Jump to a command                       |
 | `Up`, `Down`           | Scroll log history                      |
@@ -141,6 +144,8 @@ runPaginated(commands, {
 ```
 
 The API also accepts `jqCommand` when `jq` is installed under a custom name or path. Formatting runs once per complete JSON line; non-JSON output does not spawn a formatter process.
+
+During search entry, the title bar turns orange and shows the current `search: <input>` value; matches highlight immediately as text is entered. Press Enter or Escape to return to the normal title bar. The `?` shortcut replaces the view with a formatted shortcut list until any key is pressed.
 
 The `ALL` tab keeps a bounded, chronological view of output from every command. Each entry is labelled with its source command and retains that command's colour. Search highlights matches in the selected command or in `ALL`, and `n`/`N` cycles through the results while preserving the current history position.
 

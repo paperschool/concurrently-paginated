@@ -8,6 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 No unreleased changes.
 
+## [0.4.0] - 2026-09-14
+
+### Added
+
+- Live search highlighting while typing.
+- A formatted keyboard-shortcuts overlay opened with `?`.
+
+### Changed
+
+- Show the active search input in an orange full-width title bar.
+- Use compact, dot-free tab spacing and full-width title/status bars.
+
 ## [0.3.1] - 2026-09-14
 
 ### Fixed

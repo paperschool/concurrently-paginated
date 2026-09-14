@@ -1,4 +1,5 @@
 const readline = require("node:readline");
+const packageVersion = require("../package.json").version;
 const {
   DIM,
   ENTER_ALTERNATE_SCREEN,
@@ -7,6 +8,8 @@ const {
   RESET,
   SELECTED_TAB_BACKGROUND,
   SELECTED_TAB_FOREGROUND,
+  SEARCH_BACKGROUND,
+  SEARCH_FOREGROUND,
   TAB_FOREGROUND,
   STATUS_BACKGROUND,
   stripTerminalControls,
@@ -42,6 +45,7 @@ class PaginatedRenderer {
     this.searchQuery = "";
     this.searchMatches = [];
     this.searchMatchIndex = -1;
+    this.helpMode = false;
     this.pendingInput = "";
     this.inputSequenceTimer = null;
     this.renderQueued = false;
@@ -144,6 +148,12 @@ class PaginatedRenderer {
   }
 
   processInputKey(key) {
+    if (this.helpMode) {
+      this.helpMode = false;
+      this.render();
+      return;
+    }
+
     if (this.searchMode) {
       this.handleSearchInput(key);
       return;
@@ -155,6 +165,9 @@ class PaginatedRenderer {
       }
     } else if (key === "/") {
       this.beginSearch();
+    } else if (key === "?") {
+      this.helpMode = true;
+      this.render();
     } else if (key === "n") {
       this.nextSearchMatch(1);
     } else if (key === "N") {
@@ -187,6 +200,8 @@ class PaginatedRenderer {
 
   select(index) {
     this.selectedIndex = (index + this.tabCount) % this.tabCount;
+    this.searchMode = false;
+    this.searchInput = "";
     if (this.searchQuery) {
       this.searchMatches = this.findSearchMatches();
       this.searchMatchIndex = this.searchMatches.length > 0 ? 0 : -1;
@@ -197,6 +212,9 @@ class PaginatedRenderer {
   beginSearch() {
     this.searchMode = true;
     this.searchInput = "";
+    this.searchQuery = "";
+    this.searchMatches = [];
+    this.searchMatchIndex = -1;
     this.render();
   }
 
@@ -205,22 +223,30 @@ class PaginatedRenderer {
       this.searchMode = false;
       this.render();
     } else if (key === "\r" || key === "\n") {
-      this.finishSearch(this.searchInput);
+      this.searchMode = false;
+      this.render();
     } else if (key === "\u007f" || key === "\b") {
       this.searchInput = this.searchInput.slice(0, -1);
+      this.updateSearchQuery();
       this.render();
     } else if (key.length === 1 && key >= " ") {
       this.searchInput += key;
+      this.updateSearchQuery();
       this.render();
     }
   }
 
-  finishSearch(query) {
-    this.searchMode = false;
-    this.searchQuery = query;
+  updateSearchQuery() {
+    this.searchQuery = this.searchInput;
     this.searchMatches = this.findSearchMatches();
     this.searchMatchIndex = this.searchMatches.length > 0 ? 0 : -1;
     this.focusSearchMatch();
+  }
+
+  finishSearch(query) {
+    this.searchInput = query;
+    this.updateSearchQuery();
+    this.searchMode = false;
     this.render();
   }
 
@@ -302,6 +328,11 @@ class PaginatedRenderer {
   }
 
   render() {
+    if (this.helpMode) {
+      this.renderHelp();
+      return;
+    }
+
     const state = this.selectedState;
     const lines = this.visualLines(state);
     const end = Math.max(lines.length - state.scrollOffset, 0);
@@ -309,10 +340,7 @@ class PaginatedRenderer {
 
     readline.cursorTo(this.output, 0, 0);
     readline.clearScreenDown(this.output);
-    const controls = this.searchMode
-      ? `${DIM}Search: ${this.searchInput}_ | Enter find | Esc cancel${RESET}`
-      : `${DIM}/ search | n/N next/previous | Tab/Left/Right switch | Up/Down scroll | PgUp/PgDn page | End live | q quit${RESET}`;
-    this.renderLine(1, controls);
+    this.renderLine(1, "");
     this.renderLogs(lines.slice(start, end));
     this.renderStatusBar();
     this.renderTitleBar();
@@ -326,9 +354,8 @@ class PaginatedRenderer {
   }
 
   renderTitleBar() {
-    const title = this.titleText();
-
-    this.renderBar(0, `${TAB_FOREGROUND}${title}${RESET}`, STATUS_BACKGROUND);
+    const background = this.searchMode ? SEARCH_BACKGROUND : STATUS_BACKGROUND;
+    this.renderBar(0, this.titleBarText(), background);
   }
 
   titleText() {
@@ -336,8 +363,54 @@ class PaginatedRenderer {
     return ` ${state.name} - ${state.status} `;
   }
 
+  titleBarText() {
+    if (this.searchMode) {
+      const title = ` search: ${this.searchInput}_ `;
+      const padding = " ".repeat(Math.max(this.width - visibleLength(title), 0));
+
+      return `${SEARCH_FOREGROUND}${title}${padding}${RESET}`;
+    }
+
+    const title = this.titleText();
+    const padding = " ".repeat(Math.max(this.width - visibleLength(title), 0));
+
+    return `${TAB_FOREGROUND}${title}${padding}${RESET}`;
+  }
+
+  renderHelp() {
+    const shortcuts = [
+      ["/", "Search the selected history"],
+      ["Enter / Esc", "Apply or cancel a search"],
+      ["n / N", "Next or previous search match"],
+      ["Tab / Left / Right", "Switch command or the ALL view"],
+      ["1-9", "Jump directly to a command"],
+      ["Up / Down", "Scroll log history"],
+      ["Page Up / Page Down", "Scroll one page"],
+      ["End", "Return to live output"],
+      ["q / Ctrl+C", "Stop all commands"],
+    ];
+
+    readline.cursorTo(this.output, 0, 0);
+    readline.clearScreenDown(this.output);
+    this.renderBar(0, `${TAB_FOREGROUND} Keyboard shortcuts ${RESET}`, STATUS_BACKGROUND);
+    this.renderLine(1, "");
+    shortcuts.forEach(([key, action], index) => {
+      this.renderLine(index + 2, `${TAB_FOREGROUND}${key.padEnd(22)}${RESET}${action}`);
+    });
+    this.renderBar(this.height - 1, `${DIM}Press any key to close${RESET}`, STATUS_BACKGROUND);
+  }
+
   renderStatusBar() {
-    this.renderBar(this.height - 1, this.taskSummary(), STATUS_BACKGROUND);
+    this.renderBar(this.height - 1, this.statusBarText(), STATUS_BACKGROUND);
+  }
+
+  statusBarText() {
+    const version = `v${packageVersion}`;
+    const available = Math.max(this.width - visibleLength(version) - 1, 10);
+    const tabs = this.taskSummary(available);
+    const gap = Math.max(this.width - visibleLength(tabs) - visibleLength(version), 1);
+
+    return `${tabs}${" ".repeat(gap)}${DIM}${version}${RESET}`;
   }
 
   renderBar(row, text, background) {
@@ -355,8 +428,8 @@ class PaginatedRenderer {
     this.output.write(`${fitted}${padding}`);
   }
 
-  taskSummary() {
-    const available = Math.max(this.width - 1, 10);
+  taskSummary(available = this.width - 1) {
+    available = Math.max(available, 10);
     const tabWidth = (index) => visibleLength(this.taskTab(index, index === this.selectedIndex));
     const visibleIndexes = [this.selectedIndex];
     let used = tabWidth(this.selectedIndex);
@@ -419,7 +492,7 @@ class PaginatedRenderer {
       ...(rightHidden ? [muted("...")] : []),
     ];
 
-    return `${tabs.join(`${muted("  ·  ")}`)} `;
+    return `${tabs.join("  ")} `;
   }
 
   taskTab(index, selected) {
