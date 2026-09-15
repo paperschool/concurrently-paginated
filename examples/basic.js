@@ -8,11 +8,11 @@ const command = (name, delay, total) =>
 
 runPaginated(
     [
-        { name: "API", command: command("API", 220, 36) },
-        { name: "WORKER", command: command("WORKER", 340, 28) },
-        { name: "WEB", command: command("WEB", 470, 22) },
-        { name: "DATABASE", command: command("DATABASE", 560, 18) },
-        { name: "AUTH", command: command("AUTH", 680, 15) },
+        { name: "API", command: command("API", 220, 360) },
+        { name: "WORKER", command: command("WORKER", 340, 280) },
+        { name: "WEB", command: command("WEB", 470, 220) },
+        { name: "DATABASE", command: command("DATABASE", 560, 180) },
+        { name: "AUTH", command: command("AUTH", 680, 150) },
     ],
     {
         formatJsonLogs: false,
