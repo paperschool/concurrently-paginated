@@ -101,20 +101,21 @@ Command objects and `concurrently` options follow the upstream programmatic API.
 
 ## Controls
 
-| Key                    | Action                                    |
-| ---------------------- | ----------------------------------------- |
-| `/`                    | Start live search in the selected history |
-| `Enter`, `Esc`         | Exit search entry mode                    |
-| `n`, `N`               | Go to the next or previous search match   |
-| `?`                    | Show keyboard shortcuts                   |
-| `Tab`, `Left`, `Right` | Switch command or the `ALL` view          |
-| `1`-`9`                | Jump to a command                         |
-| `Up`, `Down`           | Scroll log history                        |
-| `Page Up`, `Page Down` | Scroll one page                           |
-| `End`                  | Return to live output                     |
-| `q`, `Ctrl+Q`, `Ctrl+C` | Stop all commands                        |
+| Key                     | Action                                            |
+| ----------------------- | ------------------------------------------------- |
+| `/`, `s`                | Start live search in the selected history         |
+| `Enter`, `Esc`          | Apply or cancel search entry                      |
+| `Up`, `Down`            | Scroll with acceleration; cycle matches in search |
+| `n`, `N`                | Go to the next or previous search match           |
+| `?`                     | Show keyboard shortcuts                           |
+| `Tab`, `Right`          | Switch to the next command or `ALL` view          |
+| `Shift+Tab`, `Left`     | Switch to the previous command or `ALL` view      |
+| `1`-`9`                 | Jump to a command                                 |
+| `Page Up`, `Page Down`  | Scroll one page                                   |
+| `Space`, `End`          | Return to live output                             |
+| `q`, `Ctrl+Q`, `Ctrl+C` | Stop all commands                                 |
 
-Long lines wrap without losing content. ANSI colours emitted by child commands are preserved.
+Long lines wrap without losing content. ANSI colours emitted by child commands are preserved. While browsing older output, the title bar shows the current position within the available scroll history.
 
 ### Optional JSON Formatting With jq
 

@@ -31,10 +31,10 @@ test("keeps an arrival-order history in the ALL tab", () => {
             [0, "first"],
         ],
     );
-    assert.match(stripAnsi(renderer.formatLog(renderer.currentLogs[0])), /TWO        second/);
+    assert.equal(stripAnsi(renderer.formatLog(renderer.currentLogs[0])).indexOf("second"), 16);
 });
 
-test("pads ALL source labels to a ten-character column", () => {
+test("pads ALL source labels to a fifteen-character column", () => {
     const renderer = createRenderer([
         { name: "API" },
         { name: "DATABASE" },
@@ -43,8 +43,8 @@ test("pads ALL source labels to a ten-character column", () => {
     renderer.append(1, "query");
     renderer.select(2);
 
-    assert.match(stripAnsi(renderer.formatLog(renderer.currentLogs[0])), /^API        request$/);
-    assert.match(stripAnsi(renderer.formatLog(renderer.currentLogs[1])), /^DATABASE   query$/);
+    assert.equal(stripAnsi(renderer.formatLog(renderer.currentLogs[0])).indexOf("request"), 16);
+    assert.equal(stripAnsi(renderer.formatLog(renderer.currentLogs[1])).indexOf("query"), 16);
 });
 
 test("searches and highlights ALL log content without source labels", () => {
@@ -55,8 +55,8 @@ test("searches and highlights ALL log content without source labels", () => {
 
     assert.equal(renderer.searchMatches.length, 1);
     const rendered = renderer.visualLines()[0];
-    assert.equal(stripAnsi(rendered), "API        API request started");
-    assert.ok(rendered.indexOf("\u001b[7m") > rendered.indexOf("API        "));
+    assert.equal(stripAnsi(rendered), "API             API request started");
+    assert.ok(rendered.indexOf("\u001b[7m") > rendered.indexOf("API             "));
 });
 
 test("keeps the ALL viewport stable while new logs arrive below it", () => {
@@ -71,6 +71,45 @@ test("keeps the ALL viewport stable while new logs arrive below it", () => {
     renderer.append(1, "new below");
 
     assert.equal(renderer.allState.scrollOffset, scrollBeforeAppend + 1);
+});
+
+test("accelerates repeated arrow scrolling and resets after a pause", () => {
+    const renderer = createRenderer();
+
+    assert.deepEqual(
+        Array.from({ length: 13 }, (_, index) => renderer.acceleratedScrollAmount(1, index * 20)),
+        [1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 8],
+    );
+    assert.equal(renderer.acceleratedScrollAmount(1, 500), 1);
+    assert.equal(renderer.acceleratedScrollAmount(-1, 520), -1);
+});
+
+test("returns to live output with Space outside search mode", () => {
+    const renderer = createRenderer();
+    renderer.selectedState.scrollOffset = 5;
+
+    renderer.processInputKey(" ");
+
+    assert.equal(renderer.selectedState.scrollOffset, 0);
+});
+
+test("keeps Space as search input while searching", () => {
+    const renderer = createRenderer();
+    renderer.beginSearch();
+
+    renderer.processInputKey(" ");
+
+    assert.equal(renderer.searchInput, " ");
+});
+
+test("starts search with s and accepts s in the search query", () => {
+    const renderer = createRenderer();
+
+    renderer.processInputKey("s");
+    renderer.processInputKey("s");
+
+    assert.equal(renderer.searchMode, true);
+    assert.equal(renderer.searchInput, "s");
 });
 
 test("searches the selected history and cycles matches", () => {
@@ -155,6 +194,18 @@ test("keeps the title bar to the command name and status", () => {
     const renderer = createRenderer();
 
     assert.equal(renderer.titleText(), " ONE - running ");
+});
+
+test("shows history position in the title bar while scrolled", () => {
+    const renderer = createRenderer();
+    for (let index = 0; index < 12; index += 1) {
+        renderer.append(0, `line ${index}`);
+    }
+    renderer.scrollBy(2);
+
+    assert.match(stripAnsi(renderer.titleBarText()), /history 2\/3 $/);
+    renderer.scrollToLatest();
+    assert.doesNotMatch(stripAnsi(renderer.titleBarText()), /history/);
 });
 
 test("does not retain terminal input sequences in exited command history", () => {
@@ -242,6 +293,40 @@ test("shows shortcuts on ? and dismisses them with the next key", () => {
     renderer.processInputKey("x");
     assert.equal(renderer.helpMode, false);
     assert.equal(renderer.selectedIndex, 0);
+});
+
+test("shows every keyboard shortcut in the help menu", () => {
+    const renderer = createRenderer(undefined, 80);
+    renderer.output.rows = 12;
+    let rendered = "";
+    renderer.output.on("data", (chunk) => {
+        rendered += chunk.toString("utf8");
+    });
+
+    renderer.renderHelp();
+
+    const help = stripAnsi(rendered);
+    for (const shortcut of [
+        "Tab or Right",
+        "Shift+Tab or Left",
+        "1-9",
+        "Up or Down",
+        "Page Up or Page Down",
+        "Space or End",
+        "/ or s",
+        "n or N",
+        "Enter or Esc",
+        "?",
+        "q or Ctrl+Q or Ctrl+C",
+    ]) {
+        assert.match(help, new RegExp(shortcut.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    }
+    assert.match(help, /q or Ctrl\+Q or Ctrl\+C\s+Stop all commands/);
+    assert.match(help, /Author:/);
+    assert.match(
+        help,
+        /Dominic Jomaa - https:\/\/github\.com\/paperschool\/concurrently-paginated/,
+    );
 });
 
 test("flashes an inactive tab using text colour only", () => {

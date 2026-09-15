@@ -1,6 +1,7 @@
 const readline = require("node:readline");
 const packageVersion = require("../package.json").version;
 const {
+  BOLD,
   DIM,
   ENTER_ALTERNATE_SCREEN,
   FLASH_TAB_FOREGROUND,
@@ -30,6 +31,7 @@ class PaginatedRenderer {
       name: command.name || `command-${index + 1}`,
       running: true,
       scrollOffset: 0,
+      maxScrollOffset: 0,
       status: "running",
       flashUntil: 0,
     }));
@@ -39,6 +41,7 @@ class PaginatedRenderer {
       name: "ALL",
       running: true,
       scrollOffset: 0,
+      maxScrollOffset: 0,
       status: "live",
     };
     this.selectedIndex = 0;
@@ -52,6 +55,9 @@ class PaginatedRenderer {
     this.inputSequenceTimer = null;
     this.renderQueued = false;
     this.started = false;
+    this.scrollRepeatCount = 0;
+    this.lastScrollDirection = 0;
+    this.lastScrollAt = 0;
   }
 
   start(onQuit) {
@@ -179,7 +185,7 @@ class PaginatedRenderer {
       if (this.onQuit) {
         this.onQuit();
       }
-    } else if (key === "/") {
+    } else if (key === "/" || key.toLowerCase() === "s") {
       this.beginSearch();
     } else if (key === "?") {
       this.helpMode = true;
@@ -193,14 +199,14 @@ class PaginatedRenderer {
     } else if (key === "\u001b[Z" || key === "\u001b[D") {
       this.select(this.selectedIndex - 1);
     } else if (key === "\u001b[A") {
-      this.scrollBy(1);
+      this.scrollBy(this.acceleratedScrollAmount(1));
     } else if (key === "\u001b[B") {
-      this.scrollBy(-1);
+      this.scrollBy(this.acceleratedScrollAmount(-1));
     } else if (key === "\u001b[5~") {
       this.scrollBy(this.visibleLineCount);
     } else if (key === "\u001b[6~") {
       this.scrollBy(-this.visibleLineCount);
-    } else if (key === "\u001b[F") {
+    } else if (key === "\u001b[F" || key === " ") {
       this.scrollToLatest();
     } else if (/^[1-9]$/.test(key)) {
       const index = Number(key) - 1;
@@ -327,16 +333,45 @@ class PaginatedRenderer {
       this.visualLines(state).length - this.visibleLineCount,
       0,
     );
+    state.maxScrollOffset = maxOffset;
     state.scrollOffset = Math.min(
       Math.max(state.scrollOffset + amount, 0),
       maxOffset,
     );
-    this.render();
+    this.renderAfterInput();
   }
 
   scrollToLatest() {
     this.selectedState.scrollOffset = 0;
-    this.render();
+    this.resetScrollAcceleration();
+    this.renderAfterInput();
+  }
+
+  acceleratedScrollAmount(direction, now = Date.now()) {
+    if (direction !== this.lastScrollDirection || now - this.lastScrollAt > 150) {
+      this.scrollRepeatCount = 0;
+    }
+
+    this.scrollRepeatCount += 1;
+    this.lastScrollDirection = direction;
+    this.lastScrollAt = now;
+    const multiplier = 2 ** Math.min(Math.floor((this.scrollRepeatCount - 1) / 4), 3);
+
+    return direction * multiplier;
+  }
+
+  resetScrollAcceleration() {
+    this.scrollRepeatCount = 0;
+    this.lastScrollDirection = 0;
+    this.lastScrollAt = 0;
+  }
+
+  renderAfterInput() {
+    if (this.started) {
+      this.queueRender();
+    } else {
+      this.render();
+    }
   }
 
   queueRender() {
@@ -359,6 +394,8 @@ class PaginatedRenderer {
 
     const state = this.selectedState;
     const lines = this.visualLines(state);
+    state.maxScrollOffset = Math.max(lines.length - this.visibleLineCount, 0);
+    state.scrollOffset = Math.min(state.scrollOffset, state.maxScrollOffset);
     const end = Math.max(lines.length - state.scrollOffset, 0);
     const start = Math.max(end - this.visibleLineCount, 0);
 
@@ -399,32 +436,81 @@ class PaginatedRenderer {
     }
 
     const title = this.titleText();
-    const padding = " ".repeat(Math.max(this.width - visibleLength(title), 0));
+    const history = this.historyPositionText();
+    const padding = " ".repeat(
+      Math.max(this.width - visibleLength(title) - visibleLength(history), 0),
+    );
 
-    return `${TAB_FOREGROUND}${title}${padding}${RESET}`;
+    return `${TAB_FOREGROUND}${title}${padding}${DIM}${history}${RESET}`;
+  }
+
+  historyPositionText() {
+    const state = this.selectedState;
+    if (state.scrollOffset === 0) {
+      return "";
+    }
+
+    return `history ${state.scrollOffset}/${state.maxScrollOffset} `;
   }
 
   renderHelp() {
     const shortcuts = [
-      ["/", "Search the selected history"],
-      ["Enter / Esc", "Apply or cancel a search"],
-      ["n / N", "Next or previous search match"],
-      ["Tab / Left / Right", "Switch command or the ALL view"],
-      ["1-9", "Jump directly to a command"],
-      ["Up / Down", "Scroll log history"],
-      ["Page Up / Page Down", "Scroll one page"],
-      ["End", "Return to live output"],
-      ["q / Ctrl+Q / Ctrl+C", "Stop all commands"],
+      ["Tab or Right", "Next view"],
+      ["Shift+Tab or Left", "Previous view"],
+      ["1-9", "Jump to command"],
+      ["Up or Down", "Scroll history"],
+      ["Page Up or Page Down", "Scroll one page"],
+      ["Space or End", "Return to live output"],
+      ["/ or s", "Start live search"],
+      ["Up or Down", "Previous / next match (search)"],
+      ["n or N", "Next / previous match"],
+      ["Enter or Esc", "Apply / cancel search"],
+      ["?", "Open / close this help"],
+      ["q or Ctrl+Q or Ctrl+C", "Stop all commands"],
     ];
 
     readline.cursorTo(this.output, 0, 0);
     readline.clearScreenDown(this.output);
-    this.renderBar(0, `${TAB_FOREGROUND} Keyboard shortcuts ${RESET}`, STATUS_BACKGROUND);
-    this.renderLine(1, "");
-    shortcuts.forEach(([key, action], index) => {
-      this.renderLine(index + 2, `${TAB_FOREGROUND}${key.padEnd(22)}${RESET}${action}`);
-    });
-    this.renderBar(this.height - 1, `${DIM}Press any key to close${RESET}`, STATUS_BACKGROUND);
+    this.renderBar(
+      0,
+      `${BOLD}${SELECTED_TAB_FOREGROUND} KEYBOARD SHORTCUTS ${RESET}`,
+      SELECTED_TAB_BACKGROUND,
+    );
+
+    const columnWidth = Math.floor(this.width / 2);
+    const rows = Math.ceil(shortcuts.length / 2);
+    for (let index = 0; index < rows; index += 1) {
+      const left = this.helpShortcut(shortcuts[index], columnWidth);
+      const right = this.helpShortcut(shortcuts[index + rows], columnWidth);
+      this.renderLine(index + 1, `${left}${right}`);
+    }
+
+    this.renderLine(this.height - 3, `${BOLD}${TAB_FOREGROUND} Author:${RESET}`);
+    this.renderLine(
+      this.height - 2,
+      " Dominic Jomaa - https://github.com/paperschool/concurrently-paginated",
+    );
+    this.renderBar(
+      this.height - 1,
+      `${DIM} Press any key to close${RESET}`,
+      STATUS_BACKGROUND,
+    );
+  }
+
+  helpShortcut(shortcut, width) {
+    if (!shortcut) {
+      return " ".repeat(width);
+    }
+
+    const [key, action] = shortcut;
+    const keyWidth = Math.min(22, Math.max(14, Math.floor(width * 0.42)));
+    const keyText = ` ${key}`;
+    const actionStart = Math.max(keyWidth, keyText.length + 1);
+    const actionText = action.slice(0, Math.max(width - actionStart, 0));
+    const gap = " ".repeat(actionStart - keyText.length);
+    const padding = " ".repeat(Math.max(width - actionStart - actionText.length, 0));
+
+    return `${BOLD}${TAB_FOREGROUND}${keyText}${RESET}${gap}${actionText}${padding}`;
   }
 
   renderStatusBar() {
@@ -555,7 +641,7 @@ class PaginatedRenderer {
   formatLog(entry) {
     if (this.allState === this.selectedState) {
       const state = this.states[entry.index];
-      return `${taskColour(entry.index, `${state.name.padEnd(10)} `)}${entry.line}`;
+      return `${taskColour(entry.index, `${state.name.padEnd(15)} `)}${entry.line}`;
     }
 
     return entry.line;

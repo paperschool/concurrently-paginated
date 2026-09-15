@@ -35,16 +35,19 @@ The interactive interface uses the terminal alternate screen and contains:
 
 Keyboard controls:
 
-| Key                    | Action                        |
-| ---------------------- | ----------------------------- |
-| `Tab`, `Left`, `Right` | Switch command                |
-| `/`                    | Search the selected history   |
-| `n`, `N`               | Next or previous search match |
-| `1`-`9`                | Jump directly to a command    |
-| `Up`, `Down`           | Scroll the selected history   |
-| `Page Up`, `Page Down` | Scroll one viewport           |
-| `End`                  | Return to live output         |
-| `q`, `Ctrl+C`          | Stop all commands             |
+| Key                     | Action                                          |
+| ----------------------- | ----------------------------------------------- |
+| `Tab`, `Right`          | Switch to the next command or `ALL` view        |
+| `Shift+Tab`, `Left`     | Switch to the previous command or `ALL` view    |
+| `/`, `s`                | Search the selected history                     |
+| `Enter`, `Esc`          | Apply or cancel search entry                    |
+| `Up`, `Down`            | Accelerated scroll; cycle matches during search |
+| `n`, `N`                | Next or previous search match                   |
+| `?`                     | Show keyboard shortcuts                         |
+| `1`-`9`                 | Jump directly to a command                      |
+| `Page Up`, `Page Down`  | Scroll one viewport                             |
+| `Space`, `End`          | Return to live output                           |
+| `q`, `Ctrl+Q`, `Ctrl+C` | Stop all commands                               |
 
 ## Public Interfaces
 

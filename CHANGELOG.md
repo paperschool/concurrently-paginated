@@ -8,6 +8,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 No unreleased changes.
 
+## [0.5.1] - 2026-09-15
+
+### Added
+
+- Show the current scroll position in the title bar while browsing history.
+- Return to live output with Space outside search mode.
+- Start live search with `s` as an alternative to `/`.
+
+### Changed
+
+- Accelerate held Up and Down scrolling and coalesce interactive redraws.
+- Refresh the keyboard help with a complete two-column shortcut reference and author link.
+- Widen the aligned command-label column in the `ALL` view to fifteen characters.
+
 ## [0.5.0] - 2026-09-15
 
 ### Added

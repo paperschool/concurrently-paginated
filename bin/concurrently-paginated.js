@@ -57,12 +57,16 @@ Options:
   -h, --help                Show this help
 
 Controls:
-  /                         Start a search in the selected history
+  / or s                    Start a search in the selected history
+  Enter / Esc               Apply or cancel search entry
   n / N                     Go to the next / previous search match
-  Tab / Left / Right        Switch commands or the ALL view
-  Up / Down                 Scroll selected command
+  ?                         Show keyboard shortcuts
+  Tab / Right               Switch to the next view
+  Shift+Tab / Left          Switch to the previous view
+  1-9                       Jump directly to a command
+  Up / Down                 Accelerated scroll; cycle search matches
   Page Up / Page Down       Scroll one page
-  End                       Return to live output
+  Space / End               Return to live output
   q / Ctrl+Q / Ctrl+C       Stop all commands`);
 }
 
