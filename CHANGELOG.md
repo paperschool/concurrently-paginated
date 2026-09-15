@@ -8,6 +8,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 No unreleased changes.
 
+## [0.5.0] - 2026-09-15
+
+### Added
+
+- Show live search match counts and support cycling matches with the Up and Down arrow keys.
+- Flash inactive tabs with grey text when new output arrives.
+- Support Ctrl+Q as an additional quit shortcut.
+- Expand the example workspace with database and auth command streams.
+
+### Changed
+
+- Align command labels to a ten-character column in the `ALL` view.
+- Keep manually scrolled command and `ALL` views anchored while new output arrives.
+- Exclude `ALL` source labels from search matching and highlighting.
+
+### Fixed
+
+- Restore the terminal and stop all child processes after a single quit request.
+
 ## [0.4.0] - 2026-09-14
 
 ### Added

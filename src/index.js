@@ -69,6 +69,7 @@ function runPaginated(commands, options = {}) {
   let runnerResult;
   let cleanup;
   let rendererStopped = false;
+  let forceKillTimer;
 
   const stop = () => {
     if (stopped) {
@@ -81,9 +82,10 @@ function runPaginated(commands, options = {}) {
       }
       command.kill("SIGTERM");
     });
-    if (cleanup) {
-      cleanup();
-    }
+    cleanup();
+    forceKillTimer = setTimeout(() => {
+      runner.commands.forEach((command) => command.kill("SIGKILL"));
+    }, 1000);
   };
 
   return new Promise((resolve, reject) => {
@@ -103,9 +105,13 @@ function runPaginated(commands, options = {}) {
     runner.result.then(
       (result) => {
         runnerResult = result;
+        clearTimeout(forceKillTimer);
+        cleanup();
         resolve(runnerResult);
       },
       (error) => {
+        clearTimeout(forceKillTimer);
+        cleanup();
         reject(error);
       },
     );

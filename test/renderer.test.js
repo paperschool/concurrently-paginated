@@ -31,7 +31,46 @@ test("keeps an arrival-order history in the ALL tab", () => {
             [0, "first"],
         ],
     );
-    assert.match(stripAnsi(renderer.formatLog(renderer.currentLogs[0])), /TWO second/);
+    assert.match(stripAnsi(renderer.formatLog(renderer.currentLogs[0])), /TWO        second/);
+});
+
+test("pads ALL source labels to a ten-character column", () => {
+    const renderer = createRenderer([
+        { name: "API" },
+        { name: "DATABASE" },
+    ]);
+    renderer.append(0, "request");
+    renderer.append(1, "query");
+    renderer.select(2);
+
+    assert.match(stripAnsi(renderer.formatLog(renderer.currentLogs[0])), /^API        request$/);
+    assert.match(stripAnsi(renderer.formatLog(renderer.currentLogs[1])), /^DATABASE   query$/);
+});
+
+test("searches and highlights ALL log content without source labels", () => {
+    const renderer = createRenderer([{ name: "API" }, { name: "WEB" }]);
+    renderer.append(0, "API request started");
+    renderer.select(2);
+    renderer.finishSearch("API");
+
+    assert.equal(renderer.searchMatches.length, 1);
+    const rendered = renderer.visualLines()[0];
+    assert.equal(stripAnsi(rendered), "API        API request started");
+    assert.ok(rendered.indexOf("\u001b[7m") > rendered.indexOf("API        "));
+});
+
+test("keeps the ALL viewport stable while new logs arrive below it", () => {
+    const renderer = createRenderer();
+    for (let index = 0; index < 12; index += 1) {
+        renderer.append(index % 2, `line ${index}`);
+    }
+    renderer.select(2);
+    renderer.scrollBy(1);
+
+    const scrollBeforeAppend = renderer.allState.scrollOffset;
+    renderer.append(1, "new below");
+
+    assert.equal(renderer.allState.scrollOffset, scrollBeforeAppend + 1);
 });
 
 test("searches the selected history and cycles matches", () => {
@@ -66,7 +105,28 @@ test("updates search matches while typing before Enter", () => {
     assert.equal(renderer.searchMode, true);
     assert.equal(renderer.searchQuery, "build");
     assert.equal(renderer.searchMatches.length, 1);
+    assert.match(stripAnsi(renderer.titleBarText()), /match 1\/1/);
     assert.match(renderer.highlight("build started"), /\u001b\[7mbuild\u001b\[0m/);
+});
+
+test("moves between search matches with Up and Down", () => {
+    const renderer = createRenderer();
+
+    renderer.append(0, "build one");
+    renderer.append(0, "build two");
+    renderer.beginSearch();
+    renderer.handleSearchInput("b");
+    renderer.handleSearchInput("u");
+    renderer.handleSearchInput("i");
+    renderer.handleSearchInput("l");
+    renderer.handleSearchInput("d");
+
+    renderer.handleSearchInput("\u001b[B");
+    assert.equal(renderer.searchMatchIndex, 1);
+    assert.match(stripAnsi(renderer.titleBarText()), /match 2\/2/);
+
+    renderer.handleSearchInput("\u001b[A");
+    assert.equal(renderer.searchMatchIndex, 0);
 });
 
 test("renders clean title-only tabs with a solid selected state", () => {
@@ -121,7 +181,7 @@ test("keeps immediate neighboring tabs visible before distant tabs", () => {
     assert.doesNotMatch(summary, /TAB-1|TAB-2|TAB-6|TAB-7/);
 });
 
-test("handles q and Ctrl+C as quit requests", () => {
+test("handles q, Ctrl+Q, and Ctrl+C as quit requests", () => {
     const renderer = createRenderer();
     let quitRequests = 0;
     renderer.onQuit = () => {
@@ -129,9 +189,10 @@ test("handles q and Ctrl+C as quit requests", () => {
     };
 
     renderer.processInputKey("q");
+    renderer.processInputKey("\u0011");
     renderer.processInputKey("\u0003");
 
-    assert.equal(quitRequests, 2);
+    assert.equal(quitRequests, 3);
 });
 
 test("right-aligns the package version in the status bar", () => {
@@ -181,4 +242,22 @@ test("shows shortcuts on ? and dismisses them with the next key", () => {
     renderer.processInputKey("x");
     assert.equal(renderer.helpMode, false);
     assert.equal(renderer.selectedIndex, 0);
+});
+
+test("flashes an inactive tab using text colour only", () => {
+    const renderer = createRenderer();
+    renderer.started = true;
+    renderer.append(1, "new output");
+
+    assert.ok(renderer.states[1].flashUntil > Date.now());
+    assert.match(renderer.taskTab(1, false), /\u001b\[38;5;255m TWO /);
+    assert.doesNotMatch(renderer.taskTab(1, false), /\u001b\[48;5;244m/);
+});
+
+test("does not flash the selected tab for its own new logs", () => {
+    const renderer = createRenderer();
+    renderer.started = true;
+    renderer.append(0, "selected output");
+
+    assert.equal(renderer.states[0].flashUntil, 0);
 });

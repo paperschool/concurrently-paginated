@@ -3,6 +3,7 @@ const packageVersion = require("../package.json").version;
 const {
   DIM,
   ENTER_ALTERNATE_SCREEN,
+  FLASH_TAB_FOREGROUND,
   LEAVE_ALTERNATE_SCREEN,
   REVERSE,
   RESET,
@@ -30,6 +31,7 @@ class PaginatedRenderer {
       running: true,
       scrollOffset: 0,
       status: "running",
+      flashUntil: 0,
     }));
     this.allState = {
       buffer: [],
@@ -70,6 +72,7 @@ class PaginatedRenderer {
     this.input.off("data", this.handleInput);
     this.output.off("resize", this.handleResize);
     this.input.setRawMode(false);
+    this.input.pause();
     this.output.write(LEAVE_ALTERNATE_SCREEN);
   }
 
@@ -79,8 +82,21 @@ class PaginatedRenderer {
     state.buffer.push(line);
     this.allState.buffer.push({ index, line });
 
+    if (this.started && index !== this.selectedIndex) {
+      state.flashUntil = Date.now() + 250;
+      setTimeout(() => {
+        if (state.flashUntil <= Date.now() && this.started) {
+          this.queueRender();
+        }
+      }, 275);
+    }
+
+    const visualLineCount = wrapAnsi(line, this.width).length;
     if (state.scrollOffset > 0) {
-      state.scrollOffset += wrapAnsi(line, this.width).length;
+      state.scrollOffset += visualLineCount;
+    }
+    if (this.allState.scrollOffset > 0) {
+      this.allState.scrollOffset += visualLineCount;
     }
 
     if (state.buffer.length > this.maxBufferLines) {
@@ -159,7 +175,7 @@ class PaginatedRenderer {
       return;
     }
 
-    if (key === "\u0003" || key.toLowerCase() === "q") {
+    if (key === "\u0003" || key === "\u0011" || key.toLowerCase() === "q") {
       if (this.onQuit) {
         this.onQuit();
       }
@@ -219,7 +235,15 @@ class PaginatedRenderer {
   }
 
   handleSearchInput(key) {
-    if (key === "\u001b") {
+    if (key === "\u001b[A") {
+      this.nextSearchMatch(-1);
+    } else if (key === "\u001b[B") {
+      this.nextSearchMatch(1);
+    } else if (key === "\u001b[5~") {
+      this.scrollBy(this.visibleLineCount);
+    } else if (key === "\u001b[6~") {
+      this.scrollBy(-this.visibleLineCount);
+    } else if (key === "\u001b") {
       this.searchMode = false;
       this.render();
     } else if (key === "\r" || key === "\n") {
@@ -366,9 +390,12 @@ class PaginatedRenderer {
   titleBarText() {
     if (this.searchMode) {
       const title = ` search: ${this.searchInput}_ `;
-      const padding = " ".repeat(Math.max(this.width - visibleLength(title), 0));
+      const matches = `match ${this.searchMatchIndex + 1}/${this.searchMatches.length}`;
+      const padding = " ".repeat(
+        Math.max(this.width - visibleLength(title) - visibleLength(matches), 1),
+      );
 
-      return `${SEARCH_FOREGROUND}${title}${padding}${RESET}`;
+      return `${SEARCH_FOREGROUND}${title}${padding}${DIM}${matches}${RESET}`;
     }
 
     const title = this.titleText();
@@ -387,7 +414,7 @@ class PaginatedRenderer {
       ["Up / Down", "Scroll log history"],
       ["Page Up / Page Down", "Scroll one page"],
       ["End", "Return to live output"],
-      ["q / Ctrl+C", "Stop all commands"],
+      ["q / Ctrl+Q / Ctrl+C", "Stop all commands"],
     ];
 
     readline.cursorTo(this.output, 0, 0);
@@ -497,9 +524,14 @@ class PaginatedRenderer {
 
   taskTab(index, selected) {
     const title = index === this.states.length ? "ALL" : this.states[index].name;
+    const flashing = index < this.states.length && this.states[index].flashUntil > Date.now();
 
     if (selected) {
       return `${SELECTED_TAB_BACKGROUND}${SELECTED_TAB_FOREGROUND} ${title} ${RESET}${STATUS_BACKGROUND}`;
+    }
+
+    if (flashing) {
+      return `${FLASH_TAB_FOREGROUND} ${title} ${RESET}${STATUS_BACKGROUND}`;
     }
 
     return `${TAB_FOREGROUND} ${title} ${RESET}${STATUS_BACKGROUND}`;
@@ -507,7 +539,7 @@ class PaginatedRenderer {
 
   visualLines() {
     return this.currentLogs.flatMap((entry) =>
-      wrapAnsi(this.highlight(this.formatLog(entry)), this.width),
+      wrapAnsi(this.formatLog({ ...entry, line: this.highlight(entry.line) }), this.width),
     );
   }
 
@@ -523,7 +555,7 @@ class PaginatedRenderer {
   formatLog(entry) {
     if (this.allState === this.selectedState) {
       const state = this.states[entry.index];
-      return `${taskColour(entry.index, `${state.name} `)}${entry.line}`;
+      return `${taskColour(entry.index, `${state.name.padEnd(10)} `)}${entry.line}`;
     }
 
     return entry.line;

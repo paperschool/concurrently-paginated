@@ -95,7 +95,7 @@ To try the interactive UI from a checkout, run:
 npm run example
 ```
 
-The demo simulates a small workspace with API traffic, worker queue batches, and frontend rebuilds. It includes coloured lifecycle messages, structured JSON lines, warnings, and completion states across `API`, `WORKER`, and `WEB`. Use `/` to search, `n`/`N` to move between matches, and `Tab` or the arrow keys to visit the `ALL` tab.
+The demo simulates a small workspace with API traffic, worker queue batches, frontend rebuilds, database activity, and auth events. It includes coloured lifecycle messages, structured JSON lines, warnings, and completion states across `API`, `WORKER`, `WEB`, `DATABASE`, and `AUTH`. Use `/` to search, `n`/`N` to move between matches, and `Tab` or the arrow keys to visit the `ALL` tab.
 
 Command objects and `concurrently` options follow the upstream programmatic API.
 
@@ -112,7 +112,7 @@ Command objects and `concurrently` options follow the upstream programmatic API.
 | `Up`, `Down`           | Scroll log history                        |
 | `Page Up`, `Page Down` | Scroll one page                           |
 | `End`                  | Return to live output                     |
-| `q`, `Ctrl+C`          | Stop all commands                         |
+| `q`, `Ctrl+Q`, `Ctrl+C` | Stop all commands                        |
 
 Long lines wrap without losing content. ANSI colours emitted by child commands are preserved.
 

@@ -63,7 +63,7 @@ Controls:
   Up / Down                 Scroll selected command
   Page Up / Page Down       Scroll one page
   End                       Return to live output
-  q / Ctrl+C                Stop all commands`);
+  q / Ctrl+Q / Ctrl+C       Stop all commands`);
 }
 
 module.exports = { parseArguments };
